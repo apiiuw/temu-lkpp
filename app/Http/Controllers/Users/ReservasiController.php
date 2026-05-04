@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Users;
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Reservation;
+use App\Models\ServiceType;
+use App\Models\ReservationSetting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -32,20 +34,27 @@ class ReservasiController extends Controller
                 );
         }
 
+        $serviceTypes = ServiceType::where('is_active', true)->get();
+        $allowedDays = json_decode(ReservationSetting::where('key', 'available_days')->value('value') ?? '[1,2,3,4]', true);
+
         return view('roles.users.reservasi.index', [
             'title' => 'Reservasi',
             'availableTimes' => $availableTimes,
             'occupiedSlots' => $occupiedSlots,
+            'serviceTypes' => $serviceTypes,
+            'allowedDays' => $allowedDays,
         ]);
     }
 
     public function store(Request $request)
     {
+        $allowedServiceTypes = ServiceType::where('is_active', true)->pluck('name')->toArray();
+
         $validatedData = $request->validate([
             'nama_lengkap' => 'required|string|max:50',
             'jabatan' => 'required|string|max:100',
             'asal_pt' => 'required|string|max:100',
-            'jenis_layanan' => 'required|in:Konsultasi SPSE / Pengadaan Elektronik,Konsultasi Regulasi Pengadaan,Konsultasi Katalog Elektronik,Konsultasi Pengadaan Langsung',
+            'jenis_layanan' => 'required|in:' . implode(',', $allowedServiceTypes),
             'detail_keperluan' => 'required|string',
             'lampiran' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:5120',
             'tanggal_jam' => 'required|date',
@@ -72,9 +81,11 @@ class ReservasiController extends Controller
             ])->withInput();
         }
 
-        if (Reservation::where('tanggal_jam', $reservationDateTime->format('Y-m-d H:i:s'))->count() >= 7) {
+        $maxPerSlot = (int) (ReservationSetting::where('key', 'max_reservations_per_slot')->value('value') ?? 7);
+
+        if (Reservation::where('tanggal_jam', $reservationDateTime->format('Y-m-d H:i:s'))->count() >= $maxPerSlot) {
             return back()->withErrors([
-                'tanggal_jam' => 'Jadwal yang dipilih sudah penuh (maksimal 7 reservasi per slot). Silakan pilih slot lain.',
+                'tanggal_jam' => "Jadwal yang dipilih sudah penuh (maksimal {$maxPerSlot} reservasi per slot). Silakan pilih slot lain.",
             ])->withInput();
         }
 
@@ -125,25 +136,36 @@ class ReservasiController extends Controller
 
     private function isAllowedReservationDay(Carbon $dateTime): bool
     {
-        return $dateTime->dayOfWeekIso >= 1 && $dateTime->dayOfWeekIso <= 4;
+        $allowedDays = json_decode(ReservationSetting::where('key', 'available_days')->value('value') ?? '[1,2,3,4]', true);
+        return in_array($dateTime->dayOfWeekIso, $allowedDays);
     }
 
     private function getAvailableTimes(): array
     {
-        $times = [];
-        $morningCurrent = Carbon::createFromTime(8, 0, 0);
-        $morningEnd = Carbon::createFromTime(11, 20, 0);
-        $afternoonCurrent = Carbon::createFromTime(13, 0, 0);
-        $afternoonEnd = Carbon::createFromTime(15, 40, 0);
+        $settings = ReservationSetting::whereIn('key', [
+            'morning_start', 'morning_end', 'afternoon_start', 'afternoon_end', 'consultation_duration_minutes'
+        ])->pluck('value', 'key');
 
-        while ($morningCurrent->lte($morningEnd)) {
+        $morningStart = $settings['morning_start'] ?? '08:00';
+        $morningEnd = $settings['morning_end'] ?? '11:20';
+        $afternoonStart = $settings['afternoon_start'] ?? '13:00';
+        $afternoonEnd = $settings['afternoon_end'] ?? '15:40';
+        $duration = (int) ($settings['consultation_duration_minutes'] ?? 40);
+
+        $times = [];
+        $morningCurrent = Carbon::createFromFormat('H:i', $morningStart);
+        $morningLast = Carbon::createFromFormat('H:i', $morningEnd);
+        $afternoonCurrent = Carbon::createFromFormat('H:i', $afternoonStart);
+        $afternoonLast = Carbon::createFromFormat('H:i', $afternoonEnd);
+
+        while ($morningCurrent->lte($morningLast)) {
             $times[] = $morningCurrent->format('H:i');
-            $morningCurrent->addMinutes(40);
+            $morningCurrent->addMinutes($duration);
         }
 
-        while ($afternoonCurrent->lte($afternoonEnd)) {
+        while ($afternoonCurrent->lte($afternoonLast)) {
             $times[] = $afternoonCurrent->format('H:i');
-            $afternoonCurrent->addMinutes(40);
+            $afternoonCurrent->addMinutes($duration);
         }
 
         return $times;

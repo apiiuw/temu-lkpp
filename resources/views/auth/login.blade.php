@@ -90,5 +90,24 @@
                 </section>
             </div>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                @if(session('error_inactive'))
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Akses Ditolak',
+                        text: '{{ session('error_inactive') }}',
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#b91c1c',
+                        background: '#ffffff',
+                        customClass: {
+                            popup: 'rounded-[32px]',
+                            confirmButton: 'rounded-2xl px-6 py-3 text-sm font-bold'
+                        }
+                    });
+                @endif
+            });
+        </script>
     </body>
 </html>

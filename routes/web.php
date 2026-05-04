@@ -7,6 +7,7 @@ use App\Http\Controllers\Agents\ServiceDetailController as AgentServiceDetailCon
 use App\Http\Controllers\Agents\TicketVerificationController;
 use App\Http\Controllers\Pimpinan\DashboardController as PimpinanDashboardController;
 use App\Http\Controllers\SuperadminController;
+use App\Http\Controllers\Superadmin\ReservationSettingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontDesk\ReservationCheckInController;
 use App\Http\Controllers\Users\ReservasiController;
@@ -81,4 +82,12 @@ Route::middleware(['auth:superadmin'])->prefix('superadmin')->group(function () 
     Route::get('/performa-agent', [SuperadminController::class, 'agentPerformance'])->name('superadmin.performa-agent');
     Route::get('/laporan', [SuperadminController::class, 'report'])->name('superadmin.laporan');
     Route::get('/laporan/cetak', [SuperadminController::class, 'printReport'])->name('superadmin.laporan.cetak');
+
+    // Reservation Settings
+    Route::get('/pengaturan-reservasi', [ReservationSettingController::class, 'index'])->name('superadmin.reservation-settings');
+    Route::post('/pengaturan-reservasi', [ReservationSettingController::class, 'updateSettings'])->name('superadmin.reservation-settings.update');
+    Route::post('/pengaturan-reservasi/reset', [ReservationSettingController::class, 'resetSettings'])->name('superadmin.reservation-settings.reset');
+    Route::post('/service-types', [ReservationSettingController::class, 'storeServiceType'])->name('superadmin.service-types.store');
+    Route::patch('/service-types/{serviceType}/toggle', [ReservationSettingController::class, 'toggleServiceType'])->name('superadmin.service-types.toggle');
+    Route::delete('/service-types/{serviceType}', [ReservationSettingController::class, 'destroyServiceType'])->name('superadmin.service-types.destroy');
 });

@@ -77,9 +77,8 @@
                 @php($printQuery = request()->except('page'))
                 <a
                     href="{{ route('superadmin.laporan.cetak', $printQuery) }}"
-                    target="_blank"
                     rel="noopener"
-                    class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100"
+                    class="whitespace-nowrap inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100"
                 >
                     Cetak Laporan
                 </a>

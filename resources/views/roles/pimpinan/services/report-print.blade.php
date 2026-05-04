@@ -184,7 +184,7 @@
     <div class="report-header">
         <h1>Laporan Rekapitulasi Layanan</h1>
         <div class="report-header-meta">
-            Dicetak oleh: {{ auth()->guard('pimpinan')->user()->name }} | Tanggal: {{ $printedAt->format('d/m/Y H:i') }}
+            Dicetak oleh: {{ auth()->guard('pimpinan')->user()->name ?? auth()->guard('superadmin')->user()->name ?? 'Administrator' }} | Tanggal: {{ $printedAt->format('d/m/Y H:i') }}
         </div>
     </div>
 
@@ -265,7 +265,7 @@
         <div class="signature-section">
             <p>Jakarta, {{ $printedAt->format('d F Y') }}</p>
             <div class="signature-line">
-                {{ auth()->guard('pimpinan')->user()->name }}
+                {{ auth()->guard('pimpinan')->user()->name ?? auth()->guard('superadmin')->user()->name ?? 'Administrator' }}
             </div>
             <p style="margin-top: 3px; font-size: 8px;">Pimpinan Unit Kerja</p>
         </div>

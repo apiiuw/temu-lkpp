@@ -406,20 +406,18 @@
                 disableMobile: true,
                 minDate: todayString,
                 onDayCreate: (_, __, ___, dayElem) => {
-                    let day = dayElem.dateObj.getDay();
-                    if (day === 0) day = 7; // ISO
+                    const day = dayElem.dateObj.getDay();
                     const dayString = formatLocalDate(dayElem.dateObj);
 
-                    if (!allowedDays.includes(day) || (isTodayClosed && dayString === todayString)) {
+                    if (day === 0 || day === 5 || day === 6 || (isTodayClosed && dayString === todayString)) {
                         dayElem.classList.add('flatpickr-disabled');
                     }
                 },
                 disable: [
                     (date) => {
-                        let day = date.getDay();
-                        if (day === 0) day = 7; // ISO
+                        const day = date.getDay();
                         const dateString = formatLocalDate(date);
-                        return !allowedDays.includes(day) || (isTodayClosed && dateString === todayString);
+                        return day === 0 || day === 5 || day === 6 || (isTodayClosed && dateString === todayString);
                     },
                 ],
             });
@@ -466,7 +464,9 @@
             return;
         }
 
-        const allowedDays = {!! json_encode($allowedDays) !!}.map(Number);
+        enableWeekdayPicker(dateInput);
+
+        const allowedDays = @json($allowedDays);
         const isAllowedDay = (dateString) => {
             if (!dateString) return false;
             const [year, month, day] = dateString.split('-').map(Number);
@@ -476,8 +476,6 @@
             
             return allowedDays.includes(dayOfWeek);
         };
-
-        enableWeekdayPicker(dateInput);
 
         const syncHiddenDateTime = () => {
             if (dateInput.value && selectedTime) {
